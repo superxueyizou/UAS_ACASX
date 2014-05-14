@@ -2,13 +2,10 @@ package modeling.observer;
 
 import modeling.SAAModel;
 import modeling.env.Constants;
-import modeling.env.Obstacle;
 import modeling.env.Waypoint;
 import modeling.uas.UAS;
 import sim.engine.SimState;
 import sim.engine.Steppable;
-import sim.util.Bag;
-import sim.util.Double2D;
 
 
 public class OscillationCounter implements Constants,Steppable
@@ -45,7 +42,7 @@ public class OscillationCounter implements Constants,Steppable
 					oscillationNo++;
 				}
 			}
-			uas1.setOscillationNo(oscillationNo);	
+			uas1.setNumOscillation(oscillationNo);	
 //			System.out.println(uas1+"  "+ oscillationNo);
 		}
 		

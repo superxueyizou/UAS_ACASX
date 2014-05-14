@@ -18,9 +18,6 @@ import sim.display.GUIState;
 import sim.engine.SimState;
 import tools.CONFIGURATION;
 import tools.UTILS;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
 import java.awt.Color;
 
 public class ModelBuilder extends JPanel
@@ -132,23 +129,11 @@ public class ModelBuilder extends JPanel
 					String[] pArr= result.split("\\s+");
 //						System.out.println(pArr[1]);
 													
-					CONFIGURATION.selfDestDist= Double.parseDouble(pArr[0]);
-					CONFIGURATION.selfPrefSpeed=Double.parseDouble(pArr[1]);
-					
+
 					CONFIGURATION.headOnSelected= Double.parseDouble(pArr[2]);
 					CONFIGURATION.headOnOffset=Double.parseDouble(pArr[3]);
-					CONFIGURATION.headOnIsRightSide= Double.parseDouble(pArr[4]);			
 					CONFIGURATION.headOnPrefSpeed=Double.parseDouble(pArr[5]);
-					
-		    		CONFIGURATION.crossingSelected = Double.parseDouble(pArr[6]);
-		    		CONFIGURATION.crossingEncounterAngle=Double.parseDouble(pArr[7]);
-		    		CONFIGURATION.crossingIsRightSide= Double.parseDouble(pArr[8]);
-		    		CONFIGURATION.crossingPrefSpeed =Double.parseDouble(pArr[9]);
-		    		
-		    		CONFIGURATION.tailApproachSelected = Double.parseDouble(pArr[10]);
-		    		CONFIGURATION.tailApproachOffset= Double.parseDouble(pArr[11]);
-		    		CONFIGURATION.tailApproachIsRightSide=Double.parseDouble(pArr[12]);
-		    		CONFIGURATION.tailApproachPrefSpeed =Double.parseDouble(pArr[13]);		    		
+					   		
 				}
 			
 				SAAConfigurator newFrame = new SAAConfigurator(state, stateWithUI);
@@ -184,21 +169,10 @@ public class ModelBuilder extends JPanel
 				
 	        	StringBuilder dataItem = new StringBuilder();
 	        	dataItem.append(comment+",");
-	        	dataItem.append(CONFIGURATION.selfDestDist+",");
 	        	dataItem.append(CONFIGURATION.selfPrefSpeed+",");
 	        	dataItem.append(CONFIGURATION.headOnSelected+",");
 	        	dataItem.append(CONFIGURATION.headOnOffset+",");
-	        	dataItem.append(CONFIGURATION.headOnIsRightSide+",");
-	        	dataItem.append(CONFIGURATION.headOnPrefSpeed+",");
-	        	dataItem.append(CONFIGURATION.crossingSelected+",");
-	        	dataItem.append(CONFIGURATION.crossingEncounterAngle+",");
-	        	dataItem.append(CONFIGURATION.crossingIsRightSide+",");
-	        	dataItem.append(CONFIGURATION.crossingPrefSpeed+",");
-	        	dataItem.append(CONFIGURATION.tailApproachSelected+",");	        	
-	        	dataItem.append(CONFIGURATION.tailApproachOffset+",");
-	        	dataItem.append(CONFIGURATION.tailApproachIsRightSide+",");
-	        	dataItem.append(CONFIGURATION.tailApproachPrefSpeed);
-	        	
+	        	dataItem.append(CONFIGURATION.headOnPrefSpeed);	        	
 	        	UTILS.writeDataItem2CSV("./src/tools/ChallengingDB.csv", dataItem.toString(), true);
         		
 				}					
@@ -273,23 +247,12 @@ public class ModelBuilder extends JPanel
 						}
 //							System.out.println(pArr[1]);
 														
-						CONFIGURATION.selfDestDist= Double.parseDouble(pArr[0]);
 						CONFIGURATION.selfPrefSpeed=Double.parseDouble(pArr[1]);
 						
 						CONFIGURATION.headOnSelected= Double.parseDouble(pArr[2]);
 						CONFIGURATION.headOnOffset=Double.parseDouble(pArr[3]);
-						CONFIGURATION.headOnIsRightSide= Double.parseDouble(pArr[4]);			
 						CONFIGURATION.headOnPrefSpeed=Double.parseDouble(pArr[5]);
-						
-			    		CONFIGURATION.crossingSelected = Double.parseDouble(pArr[6]);
-			    		CONFIGURATION.crossingEncounterAngle=Double.parseDouble(pArr[7]);
-			    		CONFIGURATION.crossingIsRightSide= Double.parseDouble(pArr[8]);
-			    		CONFIGURATION.crossingPrefSpeed =Double.parseDouble(pArr[9]);
-			    		
-			    		CONFIGURATION.tailApproachSelected = Double.parseDouble(pArr[10]);
-			    		CONFIGURATION.tailApproachOffset= Double.parseDouble(pArr[11]);
-			    		CONFIGURATION.tailApproachIsRightSide=Double.parseDouble(pArr[12]);
-			    		CONFIGURATION.tailApproachPrefSpeed =Double.parseDouble(pArr[13]);		    		
+						 		
 					}
 				} catch (FileNotFoundException e1) {
 					// TODO Auto-generated catch block
@@ -333,46 +296,7 @@ public class ModelBuilder extends JPanel
 				btnLoad.setEnabled(true);
 			}
 		});		
-		
-
-		
-		JLabel lblDestDist = new JLabel("Dest Dist");
-		lblDestDist.setBounds(12, 303, 65, 15);
-		this.add(lblDestDist);
-		
-		JLabel lblDestAngle = new JLabel("Dest Angle");
-		lblDestAngle.setBounds(12, 330, 77, 15);
-		this.add(lblDestAngle);
-		
-		JSlider destDistSlider = new JSlider();
-		destDistSlider.setSnapToTicks(true);
-		destDistSlider.setPaintLabels(true);		
-		destDistSlider.setMaximum((int)(1.1*CONFIGURATION.selfDestDist));
-		destDistSlider.setMinimum((int)(0.5*CONFIGURATION.selfDestDist));
-		destDistSlider.setValue((int)(CONFIGURATION.selfDestDist));
-		destDistSlider.setBounds(95, 304, 200, 16);
-		this.add(destDistSlider);
-		destDistSlider.addChangeListener(new ChangeListener() {
-			public void stateChanged(ChangeEvent e) {
-				JSlider source = (JSlider) e.getSource();
-				CONFIGURATION.selfDestDist = source.getValue();
-			}
-		});
-		
-		JSlider destAngleSlider = new JSlider();
-		destAngleSlider.setValue((int)Math.toDegrees(CONFIGURATION.selfDestAngle));
-		destAngleSlider.setMinimum(-180);
-		destAngleSlider.setMaximum(180);
-		destAngleSlider.setBounds(95, 330, 200, 16);
-		this.add(destAngleSlider);
-		destAngleSlider.addChangeListener(new ChangeListener() {
-			public void stateChanged(ChangeEvent e) {
-				JSlider source = (JSlider) e.getSource();
-				CONFIGURATION.selfDestAngle = Math.toRadians(source.getValue());
-			}
-		});
-		
-		
+				
 		
 	}
 }

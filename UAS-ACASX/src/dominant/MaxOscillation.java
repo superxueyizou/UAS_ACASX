@@ -3,11 +3,9 @@
  */
 package dominant;
 
-import sim.util.Double2D;
 import tools.CONFIGURATION;
 import modeling.SAAModel;
 import modeling.SAAModelBuilder;
-import modeling.observer.OscillationCounter;
 import modeling.uas.UAS;
 import ec.EvolutionState;
 import ec.Individual;
@@ -23,6 +21,11 @@ import ec.vector.DoubleVectorIndividual;
 public class MaxOscillation extends Problem implements SimpleProblemForm 
 {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	/* (non-Javadoc)
 	 * @see ec.simple.SimpleProblemForm#evaluate(ec.EvolutionState, ec.Individual, int, int)
 	 */
@@ -37,72 +40,24 @@ public class MaxOscillation extends Problem implements SimpleProblemForm
       
         DoubleVectorIndividual ind2 = (DoubleVectorIndividual)ind;
                 
-        double selfDestDist= ind2.genome[0];
-        double selfSpeed= ind2.genome[1];
-        
-        double headOnSelected;
-        if(ind2.genome[14]==0)
-    	{
-        	headOnSelected= ind2.genome[2];
-    	}
-        else
-        {
-        	headOnSelected= ind2.genome[14]==1?1:0;
-        	ind2.genome[2]=headOnSelected;
-        }
+        double selfStdDev= ind2.genome[0];
+        double selfVx= ind2.genome[1];
+        double selfVy= ind2.genome[2];        
         double headOnOffset = ind2.genome[3];
-        double headOnIsRightSide = ind2.genome[4];		
-		double headOnSpeed = ind2.genome[5];
-		
-		double crossingSelected;
-		if(ind2.genome[14]==0)
-    	{
-			crossingSelected= ind2.genome[6];
-    	}
-        else
-        {
-        	crossingSelected= ind2.genome[14]==2?1:0;
-        	ind2.genome[6]=crossingSelected;
-        }
-		double crossingEncounterAngle = ind2.genome[7];
-        double crossingIsRightSide = ind2.genome[8];		
-		double crossingSpeed = ind2.genome[9];
-		
-		double tailApproachSelected;
-		if(ind2.genome[14]==0)
-    	{
-			tailApproachSelected= ind2.genome[10];
-    	}
-        else
-        {
-        	tailApproachSelected= ind2.genome[14]==3?1:0;
-        	ind2.genome[10]=tailApproachSelected;
-        }  	
-		double tailApproachOffset = ind2.genome[11];
-		double tailApproachIsRightSide = ind2.genome[12];
-		double tailApproachPrefSpeed = ind2.genome[13];
-		
+        double headOnStdDev = ind2.genome[4];		
+		double headOnVx = ind2.genome[5];
+		double headOnVy = ind2.genome[6];	
+
+		CONFIGURATION.selfStdDevY = selfStdDev;
+		CONFIGURATION.selfVx = selfVx;
+		CONFIGURATION.selfVy= selfVy;    		
+		CONFIGURATION.headOnOffset= headOnOffset;
+		CONFIGURATION.headOnStdDevY=headOnStdDev;    			
+		CONFIGURATION.headOnVx =headOnVx;
+		CONFIGURATION.headOnVy =headOnVy;
 		
        	long time = System.nanoTime();
 		SAAModel simState= new SAAModel(785945568, CONFIGURATION.worldX, CONFIGURATION.worldY, false); 	
-		
-		CONFIGURATION.selfDestDist = selfDestDist;
-		CONFIGURATION.selfPrefSpeed = selfSpeed;
-		
-		CONFIGURATION.headOnSelected = headOnSelected;
-		CONFIGURATION.headOnOffset=headOnOffset;
-		CONFIGURATION.headOnIsRightSide= headOnIsRightSide;    		
-		CONFIGURATION.headOnPrefSpeed =headOnSpeed;
-		
-		CONFIGURATION.crossingSelected = crossingSelected;
-		CONFIGURATION.crossingEncounterAngle=crossingEncounterAngle;
-		CONFIGURATION.crossingIsRightSide= crossingIsRightSide;    		
-		CONFIGURATION.crossingPrefSpeed =crossingSpeed;
-		
-		CONFIGURATION.tailApproachSelected = tailApproachSelected;
-		CONFIGURATION.tailApproachOffset= tailApproachOffset;
-		CONFIGURATION.tailApproachIsRightSide=tailApproachIsRightSide;
-		CONFIGURATION.tailApproachPrefSpeed=tailApproachPrefSpeed;
 		
    		SAAModelBuilder sBuilder = new SAAModelBuilder(simState);
 		sBuilder.generateSimulation();
@@ -131,36 +86,26 @@ public class MaxOscillation extends Problem implements SimpleProblemForm
 		
 //****************************************************************************************
 		
-		simState.start();	
+   		simState.start();	
+		
 		do
 		{
 			if (!simState.schedule.step(simState))
 			{
 				break;
 			}
-		} while(simState.schedule.getSteps()< 1000);
+		} while(simState.schedule.getSteps()< 41);	
 		
-		if(simState.schedule.getSteps()> 400)
-		{
-			
-			 ((SimpleFitness)ind2.fitness).setFitness(  state,            
-			            0,/// ...the fitness...
-			            false);///... is the individual ideal?  Indicate here...
-
-			ind2.evaluated = true;
-			return;
-		}
 		simState.finish();
-//		System.out.println(simState.schedule.getSteps());
 //****************************************************************************************
 		
 		double totalOscillaitonNo = 0;				
 		for(int j=0; j<simState.uasBag.size(); j++)
 		{
 			UAS uas = (UAS)simState.uasBag.get(j);
-			System.out.println(uas.getOscillationNo());
+			System.out.println(uas.getNumOscillation());
  
-			totalOscillaitonNo += uas.getOscillationNo();
+			totalOscillaitonNo += uas.getNumOscillation();
 		}
 		float rawFitness= (float)totalOscillaitonNo/(simState.uasBag.size()*simState.schedule.getSteps());  
 
@@ -175,27 +120,27 @@ public class MaxOscillation extends Problem implements SimpleProblemForm
 										           false);///... is the individual ideal?  Indicate here...
         
         ind2.evaluated = true;
-        System.out.println("individual result: selfDestDist("+selfDestDist+ "), selfDestAngle("+selfSpeed+ "), isRightSide("+headOnIsRightSide+"), offset("+ headOnOffset+"), speed("+ headOnSpeed + "); fitness[[ " + fitness +" ]]" );
+        System.out.println("individual result: selfStdDev("+selfStdDev+ "), selfVx("+selfVx+ "), selfVy("+selfVy+"), headOnOffset("+ headOnOffset+"), headOnStdDev("+ headOnStdDev + "); fitness[[ " + fitness +" ]]" );
         System.out.println();
+        
         
         
         //if(fitness >0.9)
         {
         	StringBuilder dataItem = new StringBuilder();
         	dataItem.append(state.generation+",");
-        	for (int i=0; i< ind2.genome.length-1; i++)
+        	for (int i=0; i< ind2.genome.length; i++)
         	{
         		dataItem.append(ind2.genome[i]+",");
         		
         	}
         	dataItem.append(fitness+",");
-        	dataItem.append(simState.aDetector.getNoAccidents()+",");
-        	dataItem.append(ind2.genome[ind2.genome.length-1]);
+        	dataItem.append(simState.aDetector.getNoAccidents());
         	Simulation.simDataSet.add(dataItem.toString());
-        	
-        }
         
+        }
         MyStatistics.accidents[state.generation]+= simState.aDetector.getNoAccidents();
+
 
 	}
 

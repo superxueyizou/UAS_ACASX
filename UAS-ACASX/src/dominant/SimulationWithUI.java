@@ -26,7 +26,7 @@ public class SimulationWithUI
      	saaModelWithUI.setDisplayBound(CONFIGURATION.worldX, CONFIGURATION.worldY);
     	    	
     	Console c = new Console(saaModelWithUI); 
-    	c.setWhenShouldEnd(100);
+    	c.setWhenShouldEnd(42);
     	c.setBounds(1500+80, 20, 340, 380); // for windows: c.setBounds(1500+40, 0, 380, 380);
 		c.setVisible(true);			
 		

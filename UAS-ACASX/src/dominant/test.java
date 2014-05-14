@@ -1,7 +1,7 @@
 package dominant;
 
 import ec.util.MersenneTwisterFast;
-import saa.collsionavoidance.mdp.ACASXMDP;
+import saa.collsionavoidance.mdpLite.ACASXMDP;
 import sim.util.Double2D;
 import tools.CALCULATION;
 

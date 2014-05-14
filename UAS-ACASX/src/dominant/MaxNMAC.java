@@ -4,7 +4,6 @@
 package dominant;
 
 import tools.CONFIGURATION;
-import tools.UTILS;
 import modeling.SAAModel;
 import modeling.SAAModelBuilder;
 import modeling.uas.UAS;
@@ -22,6 +21,11 @@ import ec.vector.DoubleVectorIndividual;
 public class MaxNMAC extends Problem implements SimpleProblemForm 
 {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	/* (non-Javadoc)
 	 * @see ec.simple.SimpleProblemForm#evaluate(ec.EvolutionState, ec.Individual, int, int)
 	 */
@@ -38,50 +42,13 @@ public class MaxNMAC extends Problem implements SimpleProblemForm
         double distanceToDangerSum=0;
 //      System.out.println(ind2.genome[0]);  
         
-        double selfDestDist= ind2.genome[0];
-        double selfSpeed= ind2.genome[1];
-        
-        double headOnSelected;
-        if(ind2.genome[14]==0)
-    	{
-        	headOnSelected= ind2.genome[2];
-    	}
-        else
-        {
-        	headOnSelected= ind2.genome[14]==1?1:0;
-        	ind2.genome[2]=headOnSelected;        	
-        }
+        double selfStdDev= ind2.genome[0];
+        double selfVx= ind2.genome[1];
+        double selfVy= ind2.genome[2];        
         double headOnOffset = ind2.genome[3];
-        double headOnIsRightSide = ind2.genome[4];		
-		double headOnSpeed = ind2.genome[5];
-		
-		double crossingSelected;
-		if(ind2.genome[14]==0)
-    	{
-			crossingSelected= ind2.genome[6];
-    	}
-        else
-        {
-        	crossingSelected= ind2.genome[14]==2?1:0;
-        	ind2.genome[6]=crossingSelected;        	
-        }
-		double crossingEncounterAngle = ind2.genome[7];
-        double crossingIsRightSide = ind2.genome[8];		
-		double crossingSpeed = ind2.genome[9];
-		
-		double tailApproachSelected;
-		if(ind2.genome[14]==0)
-    	{
-			tailApproachSelected= ind2.genome[10];
-    	}
-        else
-        {
-        	tailApproachSelected= ind2.genome[14]==3?1:0;
-        	ind2.genome[10]=tailApproachSelected;
-        }  	
-		double tailApproachOffset = ind2.genome[11];
-		double tailApproachIsRightSide = ind2.genome[12];
-		double tailApproachPrefSpeed= ind2.genome[13];
+        double headOnStdDev = ind2.genome[4];		
+		double headOnVx = ind2.genome[5];
+		double headOnVy = ind2.genome[6];		
 		
 		long time = System.nanoTime();
 		SAAModel simState= new SAAModel(785945568, CONFIGURATION.worldX, CONFIGURATION.worldY, false); 	
@@ -89,94 +56,29 @@ public class MaxNMAC extends Problem implements SimpleProblemForm
 		int times =1, dividend=0;
         for(int i=0;i<times; i++)
         {
-    		CONFIGURATION.selfDestDist = selfDestDist;
-    		CONFIGURATION.selfPrefSpeed = selfSpeed;
-    		
-    		CONFIGURATION.headOnSelected = headOnSelected;
-    		CONFIGURATION.headOnOffset=headOnOffset;
-    		CONFIGURATION.headOnIsRightSide= headOnIsRightSide;    		
-    		CONFIGURATION.headOnPrefSpeed =headOnSpeed;
-    		
-    		CONFIGURATION.crossingSelected = crossingSelected;
-    		CONFIGURATION.crossingEncounterAngle=crossingEncounterAngle;
-    		CONFIGURATION.crossingIsRightSide= crossingIsRightSide;    		
-    		CONFIGURATION.crossingPrefSpeed =crossingSpeed;
-    		
-    		CONFIGURATION.tailApproachSelected = tailApproachSelected;
-    		CONFIGURATION.tailApproachOffset= tailApproachOffset;
-    		CONFIGURATION.tailApproachIsRightSide=tailApproachIsRightSide;
-    		CONFIGURATION.tailApproachPrefSpeed=tailApproachPrefSpeed;  
-    		
-    		if((crossingSelected==1)&&
-    				(selfSpeed-crossingSpeed>=18)&&(crossingIsRightSide==0)&&
-    				(crossingEncounterAngle<=0.9)&&(crossingEncounterAngle>=0.25*Math.PI))
-			{
-    			
-				 ((SimpleFitness)ind2.fitness).setFitness(   state,            
-				            0,/// ...the fitness...
-				            false);///... is the individual ideal?  Indicate here...
-
-				 ind2.evaluated = true;
-				return;
-			}
-    		
-    		if((crossingSelected==1)&&
-    				(crossingSpeed- selfSpeed>=18)&&(crossingIsRightSide==1)&&
-    				(crossingEncounterAngle<=0.9)&&(crossingEncounterAngle>=0.25*Math.PI))
-			{
-    			
-				 ((SimpleFitness)ind2.fitness).setFitness(   state,            
-				            0,/// ...the fitness...
-				            false);///... is the individual ideal?  Indicate here...
-
-				 ind2.evaluated = true;
-				return;
-			}
-    		
+    		CONFIGURATION.selfStdDevY = selfStdDev;
+    		CONFIGURATION.selfVx = selfVx;
+    		CONFIGURATION.selfVy= selfVy;    		
+    		CONFIGURATION.headOnOffset= headOnOffset;
+    		CONFIGURATION.headOnStdDevY=headOnStdDev;    			
+    		CONFIGURATION.headOnVx =headOnVx;
+    		CONFIGURATION.headOnVy =headOnVy;
+    		    		
  	   		SAAModelBuilder sBuilder = new SAAModelBuilder(simState);
     		sBuilder.generateSimulation();
-    				
-    		for(int m=0; m<simState.uasBag.size(); m++)
-    		{
-    			UAS uas1 = (UAS)simState.uasBag.get(m);
-    			for(int n=m+1; n<simState.uasBag.size(); n++)
-    			{
-    				UAS uas2 = (UAS)simState.uasBag.get(n);
-    				if(uas1.getLocation().distance(uas2.getLocation())<=1000)
-    				{
-    	    			
-						 ((SimpleFitness)ind2.fitness).setFitness(   state,            
-						            0,/// ...the fitness...
-						            false);///... is the individual ideal?  Indicate here...
-	
-						 ind2.evaluated = true;
-    					return;
-    				}
-    				
-    			}
-    			
-    		}
-    		
+    		    		
 //****************************************************************************************
     		
     		simState.start();	
+    		
     		do
     		{
     			if (!simState.schedule.step(simState))
     			{
     				break;
     			}
-    		} while(simState.schedule.getSteps()< 403);	
-    		if(simState.schedule.getSteps()> 400)
-    		{
-    			
-    			 ((SimpleFitness)ind2.fitness).setFitness(  state,            
-    			            0,/// ...the fitness...
-    			            false);///... is the individual ideal?  Indicate here...
-
-    			ind2.evaluated = true;
-    			return;
-    		}
+    		} while(simState.schedule.getSteps()< 41);	
+    		
     		simState.finish();
 //****************************************************************************************
     		
@@ -211,21 +113,20 @@ public class MaxNMAC extends Problem implements SimpleProblemForm
 										            false);///... is the individual ideal?  Indicate here...
         
         ind2.evaluated = true;
-        System.out.println("individual result: selfDestDist("+selfDestDist+ "), selfSpeed("+selfSpeed+ "), isRightSide("+headOnIsRightSide+"), offset("+ headOnOffset+"), speed("+ headOnSpeed + "); fitness[[ " + fitness +" ]]" );
+        System.out.println("individual result: selfStdDev("+selfStdDev+ "), selfVx("+selfVx+ "), selfVy("+selfVy+"), headOnOffset("+ headOnOffset+"), headOnStdDev("+ headOnStdDev + "); fitness[[ " + fitness +" ]]" );
         System.out.println();
         
         //if(fitness >0.9)
         {
         	StringBuilder dataItem = new StringBuilder();
         	dataItem.append(state.generation+",");
-        	for (int i=0; i< ind2.genome.length-1; i++)
+        	for (int i=0; i< ind2.genome.length; i++)
         	{
         		dataItem.append(ind2.genome[i]+",");
         		
         	}
         	dataItem.append(fitness+",");
-        	dataItem.append(simState.aDetector.getNoAccidents()+",");
-        	dataItem.append(ind2.genome[ind2.genome.length-1]);
+        	dataItem.append(simState.aDetector.getNoAccidents());
         	Simulation.simDataSet.add(dataItem.toString());
         
         }

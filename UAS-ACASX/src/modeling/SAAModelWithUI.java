@@ -3,10 +3,9 @@ package modeling;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import javax.swing.JFrame;
-import modeling.env.Destination;
-import modeling.env.VelocityObstaclePoint;
 import modeling.env.Waypoint;
 import modeling.uas.UAS;
+import saa.collsionavoidance.LookupTable;
 import sim.display.Controller;
 import sim.display.Display2D;
 import sim.display.GUIState;
@@ -15,12 +14,6 @@ import sim.portrayal.DrawInfo2D;
 import sim.portrayal.Inspector;
 import sim.portrayal.SimplePortrayal2D;
 import sim.portrayal.continuous.ContinuousPortrayal2D;
-import sim.portrayal.network.NetworkPortrayal2D;
-import sim.portrayal.network.SimpleEdgePortrayal2D;
-import sim.portrayal.network.SpatialNetwork2D;
-import sim.portrayal.simple.CircledPortrayal2D;
-import sim.portrayal.simple.HexagonalPortrayal2D;
-import sim.portrayal.simple.LabelledPortrayal2D;
 import sim.portrayal.simple.OrientedPortrayal2D;
 import sim.portrayal.simple.OvalPortrayal2D;
 import tools.CONFIGURATION;
@@ -38,28 +31,44 @@ public class SAAModelWithUI extends GUIState
 	public Display2D display;
 	public JFrame displayFrame;	
 	private double displayX = CONFIGURATION.worldX;
-	private double displayY = CONFIGURATION.worldY;
-	
+	private double displayY = CONFIGURATION.worldY;	
 	
 	ContinuousPortrayal2D environmentPortrayal = new ContinuousPortrayal2D();
-	NetworkPortrayal2D voPortrayal = new NetworkPortrayal2D();
-  
-	
    
     public SAAModelWithUI() 
     {   
         super(new SAAModel(785945568, CONFIGURATION.worldX, CONFIGURATION.worldY, true)); 	    	
-    	System.out.println("COModelWithUI() is being called!"+ "it's state(model)is: "+ state.toString());
     	sBuilder = new SAAModelBuilder((SAAModel) state);
+    	LookupTable.getInstance();
     }
   
     
-    public void start()
+    public void init(Controller c)
+    {
+        super.init(c);
+        // make the displayer
+        display = new Display2D(displayX,displayY,this);    
+        display.setScale(0.1044);
+//        display.setYScale(2);
+        // turn off clipping
+        display.setClipping(true);
+//      display.setBackdrop(new Color(0,0,0));
+
+        displayFrame = display.createFrame();
+        displayFrame.setTitle("SAA Simulation");
+        c.registerFrame(displayFrame);   // register the frame so it appears in the "Display" list
+        displayFrame.setVisible(true);
+        displayFrame.setBounds(0, 0, 1518, 1164); //(new Dimension(1514,1140))
+        
+		//adding the different layers to the display
+        display.attach(environmentPortrayal, "Environment" );
+    }
+
+
+	public void start()
 	{
-		System.out.println("COModelWithUI.start is called  "+ state);
 		((SAAModel)state).reset();
-		sBuilder.generateSimulation();
-		
+		sBuilder.generateSimulation();		
 		super.start();
 		setupPortrayals();	
 		
@@ -94,176 +103,94 @@ public class SAAModelWithUI extends GUIState
 		// tell the portrayals what to portray and how to portray them
 		environmentPortrayal.setField( simulation.environment );		
 
-		CircledPortrayal2D cp=new CircledPortrayal2D( 
-											(SimplePortrayal2D)new OvalPortrayal2D(30)
-											{
-												/**
-												 * 
-												 */
-												private static final long serialVersionUID = 1L;
-
-												public void draw(Object object, Graphics2D graphics, DrawInfo2D info)
-												{
-													paint = new Color(0, 156, 0);		
-												    super.draw(object, graphics, info);
-												}
-											},CONFIGURATION.selfSafetyRadius/10,1.0,new Color(255, 20, 0),false)	
-              {
-				private static final long serialVersionUID = 1L;
-
-					public void draw(Object object, Graphics2D graphics, DrawInfo2D info)
-					{
-						paint = ((UAS)object).isActive? new Color(255, 0, 0):new Color(128, 128, 128);			
-					    super.draw(object, graphics, info);
-					}
-
-              };
-              
-        OrientedPortrayal2D op = new OrientedPortrayal2D(cp,0, 290, new Color(0,0,0), OrientedPortrayal2D.SHAPE_KITE);
-		
-		environmentPortrayal.setPortrayalForClass(UAS.class, op);
-		
-		environmentPortrayal.setPortrayalForClass(Destination.class, new LabelledPortrayal2D( new OvalPortrayal2D(150)
+		SimplePortrayal2D sp =(SimplePortrayal2D)new OvalPortrayal2D()
 		{
-			/**
-			 * 
-			 */
 			private static final long serialVersionUID = 1L;
 
 			public void draw(Object object, Graphics2D graphics, DrawInfo2D info)
 			{
-				paint = new Color(0x0E, 0xEC, 0xF0);			
+				paint = new Color(0, 0, 0);		
 			    super.draw(object, graphics, info);
 			}
-		}, "T", new Color(0, 0, 0), false) 				
+		};
 		
-		);
+		OrientedPortrayal2D op = new OrientedPortrayal2D(sp,0, 150, new Color(0,0,0), OrientedPortrayal2D.SHAPE_KITE)
+        {
+				private static final long serialVersionUID = 1L;
+				public void draw(Object object, Graphics2D graphics, DrawInfo2D info)
+				{
+					paint = ((UAS)object).isActive? new Color(0, 0, 0):new Color(255, 0, 0);			
+				    super.draw(object, graphics, info);
+				}
+
+        };
+
+		environmentPortrayal.setPortrayalForClass(UAS.class, op);
 		
-		
-		environmentPortrayal.setPortrayalForClass(Waypoint.class, new OvalPortrayal2D(100)
+		environmentPortrayal.setPortrayalForClass(Waypoint.class, new OvalPortrayal2D()
 		{
-			/**
-			 * 
-			 */
 			private static final long serialVersionUID = 1L;
 
 			public void draw(Object object, Graphics2D graphics, DrawInfo2D info)
 			{
 				int actionCode = ((Waypoint) object).getAction();
-				if(actionCode==1)
-				{
-					//red for avoid
-					paint = new Color(255, 0, 0);	
-					scale =200;
-					filled =true;
-				}
-				else if(actionCode==2)
-				{
-					//yellow for maintain
-					paint = new Color(255, 155, 0);	
-					scale =100;
-					filled =true;
-				}
-				else if(actionCode==3)
-				{
-					//green for restore
-					paint = new Color(0, 255, 0);	
-					scale =100;
-					filled =true;
-				}
-
-				else if(actionCode==11||actionCode==12)
-				{
-					//red for avoid
-					paint = new Color(255, 0, 0);	
-					scale =100;
-					filled =false;
-				}
-				else if(actionCode==13||actionCode==14)
-				{
-					//red for avoid
-					paint = new Color(0, 255, 0);	
-					scale =100;
-					filled =false;
-				}
-				else if(actionCode==15||actionCode==16)
-				{
-					//red for avoid
-					paint = new Color(0, 0, 255);	
-					scale =100;
-					filled =false;
-				}				
-				else
-				{
-					//black for normal
-					paint = new Color(0, 0, 0);
-					scale = 100;
-					filled =true;
-				}
-				
-				/********************for ACASX (+30)******************************************/
 				if(actionCode==31||actionCode==33 ||actionCode==35)
 				{//climb					
-					scale =200;
+					
 					filled =true;
 					switch(actionCode)
 					{
 					case 31:
-						paint = new Color(0, 255, 0);//CL25
+						paint = new Color(255,0,0);//CL25
+						scale =50;
 						break;
 					case 33:
-						paint = new Color(0, 255, 255);//SCL25
+						paint = new Color(255, 0, 0);//SCL25
+						scale =80;
 						break;
 					case 35:
-						paint = new Color(255, 0, 0);//SCL42						
+						paint = new Color(255, 0, 0);//SCL42	
+						scale =120;
 					}
 				}
 				else if(actionCode==32||actionCode==34 ||actionCode==36)
-				{//descend					
-					scale =200;
-					filled =false;
+				{//descend	
+					double k=1;
+					filled =true;
 					switch(actionCode)
 					{
 					case 32:
-						paint = new Color(0, 255, 0);//DES25
+						paint = new Color(0,255,0);//DES25
+						scale =50*k;
 						break;
 					case 34:
-						paint = new Color(0, 255, 255);//SDES25
+						paint = new Color(0, 255, 0);//SDES25
+						scale =80*k;
 						break;
 					case 36:
-						paint = new Color(255, 0, 0);//SDES42						
+						paint = new Color(0, 255, 0);//SDES42	
+						scale =120*k;
 					}
 				}
 				else if(actionCode==30)
 				{//COC
+					paint = new Color(0, 0, 0);
+					scale = 50;
+					filled =false;
+				}
+				else
+				{
 					//black for normal
 					paint = new Color(0, 0, 0);
-					scale = 10;
+					scale = 50;
 					filled =true;
 				}
 				/*********************************************************************/			
 			    super.draw(object, graphics, info);
 			}
-		});
+		});		
 		
-		environmentPortrayal.setPortrayalForClass(VelocityObstaclePoint.class, new HexagonalPortrayal2D(50)
-		{
-			/**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
 
-			public void draw(Object object, Graphics2D graphics, DrawInfo2D info)
-			{
-				paint = new Color(255, 255, 255);			
-			    super.draw(object, graphics, info);
-			}
-		});
-		
-		
-		voPortrayal.setField( new SpatialNetwork2D(simulation.environment, simulation.voField));
-		voPortrayal.setPortrayalForAll(new SimpleEdgePortrayal2D());
-		
 		// reschedule the displayer
 		display.reset();
 		// redraw the display
@@ -272,30 +199,6 @@ public class SAAModelWithUI extends GUIState
 	
 	
 
-    public void init(Controller c)
-    {
-        super.init(c);
-        // make the displayer
-        display = new Display2D(displayX,displayY,this);    
-        display.setScale(0.25*0.29/2.5);
-        // turn off clipping
-        display.setClipping(true);
-//      display.setBackdrop(new Color(0,0,0));
-
-        displayFrame = display.createFrame();
-        displayFrame.setTitle("SAA Simulation");
-        c.registerFrame(displayFrame);   // register the frame so it appears in the "Display" list
-        displayFrame.setVisible(true);
-        displayFrame.setBounds(0, 0, 1518, 1164); //(new Dimension(1514,1140))
-        
-		//adding the different layers to the display
-        display.attach(environmentPortrayal, "Environment" );
-        display.attach(voPortrayal, "VelocityObstacles",false);
-         
-        System.out.println("COModelWithUI.init is called!");
-    }
-    
-  
     public void quit()
     {
         super.quit();

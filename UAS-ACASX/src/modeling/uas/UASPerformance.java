@@ -7,6 +7,8 @@ package modeling.uas;
 public class UASPerformance
 {
 	//the maximum possible values of the uasBag statistics
+	private double stdDevX;
+	private double stdDevY;
 	private double maxSpeed;
 	private double minSpeed;
 	private double prefSpeed;
@@ -17,8 +19,10 @@ public class UASPerformance
 	private double maxDeceleration;
 	
 	
-	public UASPerformance(double maxUASSpeed, double minUASSpeed,double prefUASSpeed, double maxUASClimb, double maxUASDescent, double maxUASTurning, double maxUASAcceleration, double maxUASDeceleration)
+	public UASPerformance(double stdDevX, double stdDevY,double maxUASSpeed, double minUASSpeed,double prefUASSpeed, double maxUASClimb, double maxUASDescent, double maxUASTurning, double maxUASAcceleration, double maxUASDeceleration)
 	{
+		this.setStdDevX(stdDevX);
+		this.setStdDevY(stdDevY);
 		maxSpeed = maxUASSpeed;
 		minSpeed = minUASSpeed;
 		prefSpeed = prefUASSpeed;
@@ -91,6 +95,22 @@ public class UASPerformance
 	
 	public void setMaxTurning(double maxTurning) {
 		this.maxTurning = maxTurning;
+	}
+
+	public double getStdDevX() {
+		return stdDevX;
+	}
+
+	public void setStdDevX(double stdDevX) {
+		this.stdDevX = stdDevX;
+	}
+
+	public double getStdDevY() {
+		return stdDevY;
+	}
+
+	public void setStdDevY(double stdDevY) {
+		this.stdDevY = stdDevY;
 	}
 
 }

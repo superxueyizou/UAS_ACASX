@@ -5,8 +5,6 @@ package saa.collsionavoidance;
 
 import sim.engine.SimState;
 import sim.engine.Steppable;
-import modeling.env.Waypoint;
-
 
 /**
  * @author Xueyi
@@ -32,7 +30,7 @@ public abstract class CollisionAvoidanceAlgorithm implements Steppable
 	
 	public abstract void init();
 	
-	public abstract Waypoint execute();
+	public abstract void execute();
 	
 	@Override
 	public abstract void step(SimState simState);

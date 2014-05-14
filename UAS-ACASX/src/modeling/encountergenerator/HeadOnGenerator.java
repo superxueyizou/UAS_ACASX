@@ -3,10 +3,7 @@
  */
 package modeling.encountergenerator;
 
-import saa.autopilot.AutoPilot;
-import saa.autopilot.DubinsAutoPilot;
-import saa.autopilot.ToTargetAutoPilot;
-import saa.autopilot.WhiteNoiseAutoPilot;
+import saa.AutoPilot;
 import saa.collsionavoidance.ACASX;
 import saa.collsionavoidance.CollisionAvoidanceAlgorithm;
 import saa.collsionavoidance.CollisionAvoidanceAlgorithmAdapter;
@@ -19,7 +16,6 @@ import saa.sense.TCAS;
 import sim.util.Double2D;
 import tools.CONFIGURATION;
 import modeling.SAAModel;
-import modeling.env.Destination;
 import modeling.uas.SenseParas;
 import modeling.uas.UAS;
 import modeling.uas.UASPerformance;
@@ -37,43 +33,28 @@ public class HeadOnGenerator extends EncounterGenerator
 	 */
 	private SAAModel state;
 	
-	private UAS self;
-	
-	private double offset;
-	private int sideFactor;
-	private double intruderSpeed;
+	private Double2D location;
+	private double Vx;
+	private double Vy;
 		
 	
-	public HeadOnGenerator(SAAModel state, UAS uas, double offset, boolean isRightSide, double intruderSpeed) 
+	public HeadOnGenerator(SAAModel state, Double2D location, double Vx, double Vy) 
 	{		
 		this.state=state;
-		this.self=uas;
-		this.offset=offset;
-		this.intruderSpeed = intruderSpeed;
-		this.sideFactor = isRightSide? +1:-1;
+		this.location = location;
+		this.Vx = Vx;
+		this.Vy = Vy;
 		
 	}
 	
 	public void execute()
-	{
-		Double2D selfMiddle = self.getLocation().add(self.getDestination().getLocation()).multiply(0.5);
-		Double2D selfVector = self.getDestination().getLocation().subtract(self.getLocation());
-		Double2D intruderVector = selfVector.negate().multiply(intruderSpeed/self.getSpeed());
-		Double2D offsetVector = selfVector.rotate(0.5*sideFactor*Math.PI).resize(offset);
-		Double2D intruderMiddle = selfMiddle.add(offsetVector);
-				
-		Double2D intruderLocation = intruderMiddle.subtract(intruderVector.multiply(0.5));
-		Double2D intruderDestinationLoc = intruderMiddle.add(intruderVector.multiply(0.5));
-		Destination intruderDestination = new Destination(state.getNewID(), null);
-		intruderDestination.setLocation(intruderDestinationLoc);
-		
-		UASVelocity intruderVelocity = new UASVelocity(intruderVector.resize(intruderSpeed));
-		UASPerformance intruderPerformance = new UASPerformance(CONFIGURATION.headOnMaxSpeed, CONFIGURATION.headOnMinSpeed, intruderSpeed, CONFIGURATION.headOnMaxClimb, CONFIGURATION.headOnMaxDescent,CONFIGURATION.headOnMaxTurning, CONFIGURATION.headOnMaxAcceleration, CONFIGURATION.headOnMaxDeceleration);
+	{	
+		UASVelocity intruderVelocity = new UASVelocity(new Double2D(Vx,Vy));
+		UASPerformance intruderPerformance = new UASPerformance(CONFIGURATION.headOnStdDevX, CONFIGURATION.headOnStdDevY,
+				CONFIGURATION.headOnMaxSpeed, CONFIGURATION.headOnMinSpeed, Math.sqrt(Vx*Vx+Vy*Vy), CONFIGURATION.headOnMaxClimb, CONFIGURATION.headOnMaxDescent,CONFIGURATION.headOnMaxTurning, CONFIGURATION.headOnMaxAcceleration, CONFIGURATION.headOnMaxDeceleration);
 		SenseParas intruderSenseParas = new SenseParas(CONFIGURATION.headOnViewingRange,CONFIGURATION.headOnViewingAngle);
-
 		
-		UAS intruder = new UAS(state.getNewID(),CONFIGURATION.headOnSafetyRadius,intruderLocation, intruderDestination, intruderVelocity,intruderPerformance, intruderSenseParas);
-		intruder.setSource(intruderLocation);
+		UAS intruder = new UAS(state.getNewID(),location, intruderVelocity,intruderPerformance, intruderSenseParas);
 		
 		SensorSet sensorSet = new SensorSet();
 		if((CONFIGURATION.headOnSensorSelection&0B10000) == 0B10000)
@@ -98,22 +79,7 @@ public class HeadOnGenerator extends EncounterGenerator
 		}
 		sensorSet.synthesize();
 		
-		AutoPilot ap;
-		switch (CONFIGURATION.headOnAutoPilotAlgorithmSelection)
-		{
-			case "ToTarget":
-				ap= new ToTargetAutoPilot(state, intruder);
-				break;
-			case "Dubins":
-				ap= new DubinsAutoPilot(state, intruder);
-				break;
-			case "WhiteNoise":
-				ap= new WhiteNoiseAutoPilot(state, intruder);
-				break;
-			default:
-				ap= new ToTargetAutoPilot(state, intruder);
-		
-		}
+		AutoPilot ap= new AutoPilot(state, intruder,intruderPerformance, CONFIGURATION.headOnAutoPilotAlgorithmSelection,-999);
 		
 		CollisionAvoidanceAlgorithm caa;
 		switch(CONFIGURATION.headOnCollisionAvoidanceAlgorithmSelection)
@@ -131,14 +97,9 @@ public class HeadOnGenerator extends EncounterGenerator
 		intruder.init(sensorSet,ap,caa);
 		
 		state.uasBag.add(intruder);
-		state.obstacles.add(intruder);		
-		state.allEntities.add(intruderDestination);
 		state.allEntities.add(intruder);
 		intruder.setSchedulable(true);
-		state.toSchedule.add(intruder);
-				
-		
-		
+	
 	}
 
 }

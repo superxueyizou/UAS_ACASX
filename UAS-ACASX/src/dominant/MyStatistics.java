@@ -5,6 +5,10 @@ import ec.simple.SimpleShortStatistics;
 
 public class MyStatistics extends SimpleShortStatistics 
 {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	protected static int[] accidents= new int[500];
 
 	public MyStatistics() 

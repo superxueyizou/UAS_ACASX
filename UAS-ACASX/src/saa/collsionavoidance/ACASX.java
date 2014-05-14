@@ -5,19 +5,17 @@ package saa.collsionavoidance;
 
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Map.Entry;
+import java.util.TreeMap;
+
 import modeling.SAAModel;
-import modeling.env.Waypoint;
 import modeling.uas.UAS;
-import saa.collsionavoidance.mdp.ACASXMDP;
-import saa.collsionavoidance.mdp.ACASXState;
-import saa.collsionavoidance.mdp.Util;
+import saa.collsionavoidance.mdpLite.ACASXMDP;
+import saa.collsionavoidance.mdpLite.ACASXState;
 import sim.engine.SimState;
-import sim.util.Double2D;
 
 
 /**
@@ -36,6 +34,7 @@ public class ACASX extends CollisionAvoidanceAlgorithm
 	private SAAModel state; 
 	private UAS hostUAS;
 	private UAS intruder=null;
+	private LookupTable lookupTable;
 	private int ra=0;//"COC"
 	
 	public ACASX(SimState simstate, UAS uas) 
@@ -68,6 +67,7 @@ public class ACASX extends CollisionAvoidanceAlgorithm
 		
 		}
 	
+		lookupTable=LookupTable.getInstance();
 	}	
 	
 	
@@ -77,119 +77,113 @@ public class ACASX extends CollisionAvoidanceAlgorithm
 	{
 		if(hostUAS.isActive == true)
 		{	
-			hostUAS.setCaaWp(execute());
+			execute();
 			
 		}
 		 
 	}
 	
 	
-	public Waypoint execute()
+	public void execute()
 	{
 		double h=(intruder.getLocation().y-hostUAS.getLocation().y);
 		double oVz=hostUAS.getVelocity().y;
 		double iVz=intruder.getVelocity().y;
-		int t=(int) Math.ceil( (intruder.getLocation().x-hostUAS.getLocation().x)/(hostUAS.getVelocity().x-intruder.getVelocity().x));
-		System.out.println(t);
+		double timeToGo=(intruder.getLocation().x-hostUAS.getLocation().x)/(hostUAS.getVelocity().x-intruder.getVelocity().x);
+		int t=(int) Math.ceil(timeToGo);
+		state.information=String.format( "(%.1f, %.1f, %.1f, %.1f, %d)",h,oVz,iVz,timeToGo,ra);
 		
 		double hRes=ACASXMDP.hRes;
 		double oVRes=ACASXMDP.oVRes;
 		double iVRes=ACASXMDP.iVRes;
-		if(Math.abs(h)<1000 && Math.abs(oVz)<=42 && Math.abs(iVz)<=42 && t<=40 && t>=0)
+		if(Math.abs(h)<ACASXMDP.UPPER_H && t<=ACASXMDP.nt && t>0)
 		{
-			Map<Integer, Double> qValuesMap = new LinkedHashMap<>();
-			ArrayList<AbstractMap.SimpleEntry<Integer, Double>> actionMapValues = new ArrayList<AbstractMap.SimpleEntry<Integer, Double>>();
-
-			int hIdxL = (int)Math.floor(h/hRes);
-			int oVzIdxL = (int)Math.floor(oVz/oVRes);
-			int iVzIdxL = (int)Math.floor(iVz/iVRes);
-			for(int i=0;i<=1;i++)
+			if(Math.abs(oVz)<=ACASXMDP.UPPER_VZ && Math.abs(iVz)<=ACASXMDP.UPPER_VZ )
 			{
-				int hIdx = (i==0? hIdxL : hIdxL+1);
-				int hIdxP= hIdx< -ACASXMDP.nh? -ACASXMDP.nh: (hIdx>ACASXMDP.nh? ACASXMDP.nh : hIdx);			
-				for(int j=0;j<=1;j++)
+				Map<Integer, Double> qValuesMap = new TreeMap<>();
+				ArrayList<AbstractMap.SimpleEntry<Integer, Double>> actionMapValues = new ArrayList<AbstractMap.SimpleEntry<Integer, Double>>();
+
+				int hIdxL = (int)Math.floor(h/hRes);
+				int oVzIdxL = (int)Math.floor(oVz/oVRes);
+				int iVzIdxL = (int)Math.floor(iVz/iVRes);
+				for(int i=0;i<=1;i++)
 				{
-					int oVzIdx = (j==0? oVzIdxL : oVzIdxL+1);
-					int oVzIdxP= oVzIdx<-ACASXMDP.noV? -ACASXMDP.noV: (oVzIdx>ACASXMDP.noV? ACASXMDP.noV : oVzIdx);
-					for(int k=0;k<=1;k++)
+					int hIdx = (i==0? hIdxL : hIdxL+1);
+					int hIdxP= hIdx< -ACASXMDP.nh? -ACASXMDP.nh: (hIdx>ACASXMDP.nh? ACASXMDP.nh : hIdx);			
+					for(int j=0;j<=1;j++)
 					{
-						int iVzIdx = (k==0? iVzIdxL : iVzIdxL+1);
-						int iVzIdxP= iVzIdx<-ACASXMDP.niV? -ACASXMDP.niV: (iVzIdx>ACASXMDP.niV? ACASXMDP.niV : iVzIdx);
-						
-						ACASXState approxState= new ACASXState(hIdxP, oVzIdxP, iVzIdxP, t, ra);
-						double probability= (1-Math.abs(hIdx-h/hRes))*(1-Math.abs(oVzIdx-oVz/oVRes))*(1-Math.abs(iVzIdx-iVz/iVRes));
-
-						int index=-999;
-						int numActions=-999;
-						index=state.indexArr.get(approxState.getOrder());
-						numActions = state.indexArr.get(approxState.getOrder()+1)-index;
-							
-						for (int n=0;n<numActions;n++) 
+						int oVzIdx = (j==0? oVzIdxL : oVzIdxL+1);
+						int oVzIdxP= oVzIdx<-ACASXMDP.noV? -ACASXMDP.noV: (oVzIdx>ACASXMDP.noV? ACASXMDP.noV : oVzIdx);
+						for(int k=0;k<=1;k++)
 						{
-							double qValue= state.costArr.get(index+n);
-							int actionCode= state.actionArr.get(index+n);							
-							actionMapValues.add(new SimpleEntry<Integer, Double>(actionCode,probability*qValue) );
-						}											}
+							int iVzIdx = (k==0? iVzIdxL : iVzIdxL+1);
+							int iVzIdxP= iVzIdx<-ACASXMDP.niV? -ACASXMDP.niV: (iVzIdx>ACASXMDP.niV? ACASXMDP.niV : iVzIdx);
+							
+							ACASXState approxState= new ACASXState(hIdxP, oVzIdxP, iVzIdxP, t, ra);
+							double probability= (1-Math.abs(hIdx-h/hRes))*(1-Math.abs(oVzIdx-oVz/oVRes))*(1-Math.abs(iVzIdx-iVz/iVRes));
+
+							int index=-999;
+							int numActions=-999;
+							index=lookupTable.indexArr.get(approxState.getOrder());
+							numActions = lookupTable.indexArr.get(approxState.getOrder()+1)-index;
+								
+							for (int n=0;n<numActions;n++) 
+							{
+								double qValue= lookupTable.costArr.get(index+n);
+								int actionCode= lookupTable.actionArr.get(index+n);							
+								actionMapValues.add(new SimpleEntry<Integer, Double>(actionCode,probability*qValue) );
+							}											
+						}
+					}
 				}
-			}
-						
-			for(AbstractMap.SimpleEntry<Integer, Double> action_value :actionMapValues)
-			{
-				if(qValuesMap.containsKey(action_value.getKey()))
+							
+				for(AbstractMap.SimpleEntry<Integer, Double> action_value :actionMapValues)
 				{
-					qValuesMap.put(action_value.getKey(), qValuesMap.get(action_value.getKey())+action_value.getValue());
+					if(qValuesMap.containsKey(action_value.getKey()))
+					{
+						qValuesMap.put(action_value.getKey(), qValuesMap.get(action_value.getKey())+action_value.getValue());
+					}
+					else
+					{
+						qValuesMap.put(action_value.getKey(), action_value.getValue());
+					}
 				}
-				else
-				{
-					qValuesMap.put(action_value.getKey(), action_value.getValue());
-				}
-			}
-			
-			double maxQValue=Double.NEGATIVE_INFINITY;
-			int bestActionCode=-999;
-			
-			Set<Entry<Integer,Double>> entrySet = qValuesMap.entrySet();
-			for (Entry<Integer,Double> entry : entrySet) 
-			{
-				if(entry.getValue()>maxQValue)
-				{
-					maxQValue=entry.getValue();
-					bestActionCode=entry.getKey();
-				}
-			}
-			System.out.println("Best action code is "+bestActionCode);
-			
-			ra=bestActionCode;
-			
-			Waypoint wp = new Waypoint(state.getNewID(), hostUAS.getDestination());
-			double a=Util.getActionA(bestActionCode);
-			double targetV= Util.getActionV(bestActionCode);
-			double x;
-			double y;
-			
-			double currentV=hostUAS.getVelocity().y;
-			System.out.println(currentV);
-			if(!Double.isInfinite(a)&&!Double.isNaN(a)&& (a>0&&targetV>currentV || a<0&&targetV<currentV))
-			{
-				x = hostUAS.getLocation().x+hostUAS.getVelocity().x;
-				y = hostUAS.getLocation().y+hostUAS.getVelocity().y+0.5*a;
-				hostUAS.setVelocity(new Double2D(hostUAS.getVelocity().x,hostUAS.getVelocity().y+a));
 				
+				double maxQValue=Double.NEGATIVE_INFINITY;
+				int bestActionCode=-999;
+				
+				Set<Entry<Integer,Double>> entrySet = qValuesMap.entrySet();
+//				System.out.println( qValuesMap.keySet());
+				for (Entry<Integer,Double> entry : entrySet) 
+				{
+					double value=entry.getValue();
+					if(value-maxQValue>=0.0001)
+					{
+						maxQValue=value;
+						bestActionCode=entry.getKey();
+					}
+				}			
+		
+				System.out.println("  Best action code is "+bestActionCode);
+				
+				ra=bestActionCode;
+				
+				hostUAS.getAp().setActionCode(bestActionCode);		
 			}
 			else
 			{
-				x = hostUAS.getLocation().x+hostUAS.getVelocity().x;
-				y = hostUAS.getLocation().y+hostUAS.getVelocity().y;
+				ra=0;
+				
+				hostUAS.getAp().setActionCode(0);	
 			}
-			wp.setLocation(new Double2D(x,y));
-			wp.setAction(bestActionCode+30);//30 for ACASX
-			return wp;
+				
 		
 		}
-			
-		return null;
+		else
+		{
+			hostUAS.getAp().setActionCode(-999);
+		}			
 		
-	
 	}
 	
 }

@@ -1,41 +1,37 @@
 package modeling.uas;
 
-import java.util.LinkedList;
-
 import modeling.SAAModel;
-import modeling.env.CircleObstacle;
 import modeling.env.Constants;
-import modeling.env.Destination;
+import modeling.env.Entity;
 import modeling.env.Waypoint;
-import saa.autopilot.AutoPilot;
+import saa.AutoPilot;
 import saa.collsionavoidance.CollisionAvoidanceAlgorithm;
 import saa.sense.SensorSet;
 import sim.engine.*;
 import sim.portrayal.Oriented2D;
 import sim.util.*;
-import tools.CONFIGURATION;
 
 /**
  *
  * @author Robert Lee
  */
-public class UAS extends CircleObstacle implements Oriented2D
+public class UAS extends Entity implements Oriented2D
 {
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	
 	//parameters for subsystems	
 	private SensorSet sensorSet;
 	private CollisionAvoidanceAlgorithm caa;
 	private AutoPilot ap;
 
-
-
 	//parameters for UAS movement	
 	private Double2D oldLocation;
+	private Double2D location;
 	private UASVelocity oldUASVelocity;		
-	private UASVelocity newUASVelocity;	
+	private UASVelocity UASVelocity;	
 	
 	private Bag achievedWaypoints;
 
@@ -45,13 +41,9 @@ public class UAS extends CircleObstacle implements Oriented2D
 	private SenseParas senseParas;
 
 	//parameters for navigation
-	private Double2D source;
-	private Destination destination;
 	private Waypoint nextWp;
-	private LinkedList<Waypoint> wpQueue;
 	private Waypoint apWp = null;//for auto-pilot
-	private Waypoint ssaWp = null;//for self-separation
-	private Waypoint caaWp = null;//for collision avoidance
+
 	
 	
 /*************************************************************************************************/
@@ -62,34 +54,29 @@ public class UAS extends CircleObstacle implements Oriented2D
 	private double tempOscillation = 0; //records the oscillation in each step: area
 	private double Oscillation = 0; //records the oscillation in a simulation: area
 
-	private double OscillationNo = 0; //records the oscillation times in a simulation
+	private double numOscillation = 0; //records the oscillation times in a simulation
 	
 /*************************************************************************************************/
-	
-	private double safetyRadius;
+
 	public boolean isActive;	
 
 	private SAAModel state;	
 
 
-	public UAS(int idNo, double safetyRadius, Double2D location, Destination destination, UASVelocity uasVelocity, UASPerformance uasPerformance, SenseParas senseParas)
+	public UAS(int idNo, Double2D location, UASVelocity uasVelocity, UASPerformance uasPerformance, SenseParas senseParas)
 	{
-		super(idNo,safetyRadius, Constants.EntityType.TUAS);
-		
-		this.safetyRadius= safetyRadius;
+		super(idNo, Constants.EntityType.TUAS);
+
 		this.location=location;
-		this.destination = destination;
 		this.uasPerformance = uasPerformance;
-		this.newUASVelocity = uasVelocity; 
+		this.UASVelocity = uasVelocity; 
 		this.senseParas = senseParas;
 		
 		this.oldUASVelocity= uasVelocity;
 		this.oldLocation= location;
 		
 		nextWp=null;
-		wpQueue=new LinkedList<Waypoint>();
-		wpQueue.offer(destination);
-		
+	
 		achievedWaypoints = new Bag();	
 
 		this.isActive=true;
@@ -111,69 +98,29 @@ public class UAS extends CircleObstacle implements Oriented2D
 		state = (SAAModel) simState;		
 		if(this.isActive == true)
 		{				
-			if (caaWp != null)
-			{
-				nextWp=caaWp;
-				state.environment.setObjectLocation(nextWp, nextWp.getLocation());
-				oldUASVelocity = newUASVelocity;
-				newUASVelocity= new UASVelocity(nextWp.getLocation().subtract(location));
-				
-				this.setOldLocation(this.location);
-				this.setLocation(nextWp.getLocation());
-				state.environment.setObjectLocation(this, this.location);
-				achievedWaypoints.add(nextWp);
-//				System.out.println("nextWp == caaWp" );	
-			}
-			else if(ssaWp != null)
-			{
-				nextWp=ssaWp;
-				state.environment.setObjectLocation(nextWp, nextWp.getLocation());
-				oldUASVelocity = newUASVelocity;
-				newUASVelocity= new UASVelocity(nextWp.getLocation().subtract(location));
-				
-				this.setOldLocation(this.location);
-				this.setLocation(nextWp.getLocation());
-				state.environment.setObjectLocation(this, this.location);
-				achievedWaypoints.add(nextWp);
-//				System.out.println("nextWp == ssaWp" );	
-			}
-			else if(apWp != null)
+			if(apWp != null)
 			{
 				nextWp=apWp;
 				state.environment.setObjectLocation(nextWp, nextWp.getLocation());
-				oldUASVelocity = newUASVelocity;
-				newUASVelocity= new UASVelocity(nextWp.getLocation().subtract(location));
-				
+		
 				this.setOldLocation(this.location);
 				this.setLocation(nextWp.getLocation());
 				state.environment.setObjectLocation(this, this.location);
 				achievedWaypoints.add(nextWp);
-//				System.out.println("nextWp == apWp" );	
 				
 			}			
 			else
 			{
 				System.out.println("approaching the destination (impossible)!");
-			}
-
-			if (wpQueue.peekFirst()!=null && this.location.distance(wpQueue.peekFirst().getLocation())<3*CONFIGURATION.selfSafetyRadius)
-			{
-				wpQueue.poll();
-			}
-			if (this.location.distance(destination.getLocation())<3*CONFIGURATION.selfSafetyRadius)
-			{
-				this.isActive = false;
-				//System.out.println("arrived at the destination!");
-			}			
+			}	
 			
 		}		
 		
 		if(state!=null)
 		{
-			state.dealWithTermination();
+			dealWithTermination();
 		}
 		
-		//System.out.println("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
     }
 
 //**************************************************************************
@@ -212,23 +159,7 @@ public class UAS extends CircleObstacle implements Oriented2D
 	}
 
 
-	public Destination getDestination() {
-		return destination;
-	}
-
-
-	public void setDestination(Destination destination) {
-		this.destination = destination;
-	}
-
-	public Double2D getSource() {
-		return source;
-	}
-
-	public void setSource(Double2D source) {
-		this.source = source;
-	}
-
+	
 	public double getViewingRange() {
 		return this.senseParas.getViewingRange();
 	}
@@ -246,30 +177,26 @@ public class UAS extends CircleObstacle implements Oriented2D
 	}
 	
 	public double getBearing() {
-		return newUASVelocity.getBearing();
-	}
-
-	public void setBearing(double bearing) {
-		this.newUASVelocity.setBearing(bearing);
+		return UASVelocity.getBearing();
 	}
 	
 	public double getSpeed() {
-		return newUASVelocity.getSpeed();
+		return UASVelocity.getSpeed();
 	}
 
-	public void setSpeed(double speed) {
-		this.newUASVelocity.setSpeed(speed);
-	}
 	
 	public Double2D getOldVelocity() {
 		return oldUASVelocity.getVelocity();
 	}
+	public void setOldVelocity(Double2D velocity) {
+		oldUASVelocity.setVelocity(velocity);
+	}
 
 	public Double2D getVelocity() {
-		return newUASVelocity.getVelocity();
+		return UASVelocity.getVelocity();
 	}
 	public void setVelocity(Double2D velocity) {
-		newUASVelocity.setVelocity(velocity);
+		UASVelocity.setVelocity(velocity);
 	}
 
 	public Double2D getOldLocation() {
@@ -280,18 +207,18 @@ public class UAS extends CircleObstacle implements Oriented2D
 		this.oldLocation = oldLocation;
 	}
 	
+	public Double2D getLocation() {
+		return location;
+	}
+
+	public void setLocation(Double2D location) {
+		this.location = location;
+	}
+
 	public Bag getAchievedWaypoints() {
 		return achievedWaypoints;
 	}
-	
-	public double getSafetyRadius() {
-		return safetyRadius;
-	}
 
-	public void setSafetyRadius(double safetyRadius) {
-		this.safetyRadius = safetyRadius;
-		this.radius=safetyRadius;
-	}
 
 	public UASPerformance getUasPerformance() {
 		return uasPerformance;
@@ -333,12 +260,12 @@ public class UAS extends CircleObstacle implements Oriented2D
 		Oscillation = oscillation;
 	}
 
-	public double getOscillationNo() {
-		return OscillationNo;
+	public double getNumOscillation() {
+		return numOscillation;
 	}
 
-	public void setOscillationNo(double oscillationNo) {
-		OscillationNo = oscillationNo;
+	public void setNumOscillation(double oscillationNo) {
+		numOscillation = oscillationNo;
 	}
 	
 	public Waypoint getApWp() {
@@ -348,32 +275,7 @@ public class UAS extends CircleObstacle implements Oriented2D
 	public void setApWp(Waypoint apWp) {
 		this.apWp = apWp;
 	}
-	
-	public Waypoint getSsaWp() {
-		return ssaWp;
-	}
 
-	public void setSsaWp(Waypoint ssaWp) {
-		this.ssaWp = ssaWp;
-	}
-
-	public Waypoint getCaaWp() {
-		return caaWp;
-	}
-
-	public void setCaaWp(Waypoint caaWp) {
-		this.caaWp = caaWp;
-	}
-
-	public LinkedList<Waypoint> getWpQueue() {
-		return wpQueue;
-	}
-
-	public void setWpQueue(LinkedList<Waypoint> wpQueue) {
-		this.wpQueue = wpQueue;
-	}
-
-	
 	public SAAModel getState() {
 		return state;
 	}
@@ -382,30 +284,32 @@ public class UAS extends CircleObstacle implements Oriented2D
 		this.state = state;
 	}
 	
-	/*****************************************
-	 * overide method extended from Obstacle
-	 */
-	public boolean pointInShape(Double2D coord)
-	{
-		if (location.distance(coord) <= safetyRadius)
-		{
-			return true;
-		} 
-		else 
-		{
-			return false;
-		}
-	}
-	
-	
 	/*************
 	 * method of sim.portrayal.Oriented2D, for drawing orientation marker
 	 */
 	public double orientation2D()
 	{
-		return this.newUASVelocity.getVelocity().angle(); // this is different from the angle definition in other parts. reverse the sign.
+		return this.UASVelocity.getVelocity().angle(); // this is different from the angle definition in other parts. reverse the sign.
 	}
 
 
+    public void dealWithTermination()
+	{
+    	int noActiveAgents =0;
+    	for(Object o: state.uasBag)
+    	{
+    		if(((UAS)o).isActive)
+    		{
+    			noActiveAgents++;
+    		}
+    		
+    	}
+    	
+		if(noActiveAgents < 1)
+		{
+			state.schedule.clear();
+			state.kill();
+		}
+	 }
 
 }

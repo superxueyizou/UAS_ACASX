@@ -2,11 +2,9 @@ package modeling.observer;
 
 import modeling.SAAModel;
 import modeling.env.Constants;
-import modeling.env.Obstacle;
 import modeling.uas.UAS;
 import sim.engine.SimState;
 import sim.engine.Steppable;
-import sim.util.Bag;
 import sim.util.Double2D;
 
 

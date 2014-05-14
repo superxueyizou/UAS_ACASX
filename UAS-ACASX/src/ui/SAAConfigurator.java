@@ -65,13 +65,13 @@ public class SAAConfigurator extends JFrame implements ActionListener
 		tabbedPane.addTab("HeadOn", null, headOnPanel, null);
 		headOnPanel.setLayout(null);
 		
-		JPanel crossingPanel = new Crossing();
-		tabbedPane.addTab("Crossing", null, crossingPanel, null);
-		crossingPanel.setLayout(null);
-		
-		JPanel tailApproachPanel = new TailApproach();
-		tabbedPane.addTab("TailApproach", null, tailApproachPanel, null);
-		tailApproachPanel.setLayout(null);
+//		JPanel crossingPanel = new Crossing();
+//		tabbedPane.addTab("Crossing", null, crossingPanel, null);
+//		crossingPanel.setLayout(null);
+//		
+//		JPanel tailApproachPanel = new TailApproach();
+//		tabbedPane.addTab("TailApproach", null, tailApproachPanel, null);
+//		tailApproachPanel.setLayout(null);
 		
 		getContentPane().add(tabbedPane);
 		contentPane.add(tabbedPane);
