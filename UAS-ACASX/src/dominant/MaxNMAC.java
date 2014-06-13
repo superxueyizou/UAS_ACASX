@@ -39,72 +39,50 @@ public class MaxNMAC extends Problem implements SimpleProblemForm
             state.output.fatal("Whoa!  It's not a DoubleVectorIndividual!!!",null);        
       
         DoubleVectorIndividual ind2 = (DoubleVectorIndividual)ind;
-        double distanceToDangerSum=0;
-//      System.out.println(ind2.genome[0]);  
-        
+      
         double selfStdDev= ind2.genome[0];
         double selfVx= ind2.genome[1];
         double selfVy= ind2.genome[2];        
         double headOnOffset = ind2.genome[3];
         double headOnStdDev = ind2.genome[4];		
 		double headOnVx = ind2.genome[5];
-		double headOnVy = ind2.genome[6];		
+		double headOnVy = ind2.genome[6];				
 		
-		long time = System.nanoTime();
+		CONFIGURATION.selfStdDevY = selfStdDev;
+		CONFIGURATION.selfVx = selfVx;
+		CONFIGURATION.selfVy= selfVy;    		
+		CONFIGURATION.headOnOffset= headOnOffset;
+		CONFIGURATION.headOnStdDevY=headOnStdDev;    			
+		CONFIGURATION.headOnVx =headOnVx;
+		CONFIGURATION.headOnVy =headOnVy;
+		
 		SAAModel simState= new SAAModel(785945568, CONFIGURATION.worldX, CONFIGURATION.worldY, false); 	
+   		SAAModelBuilder sBuilder = new SAAModelBuilder(simState);
+		sBuilder.generateSimulation();
+		    		
+//****************************************************************************************
 		
-		int times =1, dividend=0;
-        for(int i=0;i<times; i++)
-        {
-    		CONFIGURATION.selfStdDevY = selfStdDev;
-    		CONFIGURATION.selfVx = selfVx;
-    		CONFIGURATION.selfVy= selfVy;    		
-    		CONFIGURATION.headOnOffset= headOnOffset;
-    		CONFIGURATION.headOnStdDevY=headOnStdDev;    			
-    		CONFIGURATION.headOnVx =headOnVx;
-    		CONFIGURATION.headOnVy =headOnVy;
-    		    		
- 	   		SAAModelBuilder sBuilder = new SAAModelBuilder(simState);
-    		sBuilder.generateSimulation();
-    		    		
+		simState.start();	
+		
+		do
+		{
+			if (!simState.schedule.step(simState))
+			{
+				break;
+			}
+		} while(simState.schedule.getSteps()<= 21);	
+		
+		simState.finish();
 //****************************************************************************************
-    		
-    		simState.start();	
-    		
-    		do
-    		{
-    			if (!simState.schedule.step(simState))
-    			{
-    				break;
-    			}
-    		} while(simState.schedule.getSteps()< 41);	
-    		
-    		simState.finish();
-//****************************************************************************************
-    		
-    		for(int j=0; j<simState.uasBag.size(); j++)
-    		{
-    			UAS uas = (UAS)simState.uasBag.get(j);
-    			System.out.println(uas.getDistanceToDanger());
+		UAS uas1 = (UAS)simState.uasBag.get(0);   
+		UAS uas2 = (UAS)simState.uasBag.get(1); 
+		float rawFitness= (float)uas1.getMinDistanceToDanger();  	
+//		System.out.println(rawFitness);
+		float fitness = 1/(1+Math.max(0,rawFitness));
+         
+//		System.out.println("uas1 location: "+uas1.getLocation());
+//		System.out.println("uas2 location: "+uas2.getLocation());
 
-    			if(uas.getDistanceToDanger()>0)
-				{
-    				distanceToDangerSum += uas.getDistanceToDanger();
-				}
-    			else
-    			{
-    				distanceToDangerSum += 0;
-    			}
-    			
-    			dividend++;
-    		}
-    		
-        }
-        
-		float rawFitness= (float)distanceToDangerSum/dividend;  
-		float fitness = 1/Math.abs(1+rawFitness);
-        
-        
         if (!(ind2.fitness instanceof SimpleFitness))
             state.output.fatal("Whoa!  It's not a SimpleFitness!!!",null);
         
@@ -113,8 +91,7 @@ public class MaxNMAC extends Problem implements SimpleProblemForm
 										            false);///... is the individual ideal?  Indicate here...
         
         ind2.evaluated = true;
-        System.out.println("individual result: selfStdDev("+selfStdDev+ "), selfVx("+selfVx+ "), selfVy("+selfVy+"), headOnOffset("+ headOnOffset+"), headOnStdDev("+ headOnStdDev + "); fitness[[ " + fitness +" ]]" );
-        System.out.println();
+        System.out.println("individual result: fitness[[ " + fitness +" ]]\n" );
         
         //if(fitness >0.9)
         {

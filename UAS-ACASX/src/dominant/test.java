@@ -10,7 +10,37 @@ public class test {
 	public test() {
 		// TODO Auto-generated constructor stub
 	}
+	
+	public static int[] sample(double[] w, int N)
+	{
+		int[] samples= new int[N];
+		int index = (int) Math.random()*w.length;
+		double beta=0.0;
+		double mw = Max(w);
+		for(int i=0; i<N; i++)
+		{
+			beta += Math.random()*2.0*mw;
+			while (beta>w[index])
+			{
+				beta -= w[index];
+				index = (index+1)%w.length;
+			}
+			samples[i]=index;
+			
+		}
+		return samples;
+	}
 
+	public static double Max(double[] w)
+	{
+		double max = w[0];
+		
+		for(int i=1;i<w.length; i++)
+		{
+			max = (w[i]>max)? w[i]:max;
+		}
+		return max;
+	}
 	/**
 	 * @param args
 	 */
@@ -18,6 +48,19 @@ public class test {
 	{
 		// TODO Auto-generated method stub
 
+		double[] w= new double[]{0.1,0.1,0.1,0.1,0.2,0.2,0.2};
+		int[] samples = sample(w,70000);
+		int count=0;
+		for(int i=0;i<7000;i++)
+		{
+			System.out.print(samples[i]+",  ");
+			if (samples[i]==6)count++;
+//			System.out.print(sample(w,1)[0]+",  ");
+			if (sample(w,1)[0]==6)count++;
+		}
+		System.out.println();
+		System.out.println(count);
+		System.out.println();
 //		Double2D v1= new Double2D(1,1);
 //		Double2D v2= new Double2D(-1,1);
 //		Double2D v3= new Double2D(-1,-1);

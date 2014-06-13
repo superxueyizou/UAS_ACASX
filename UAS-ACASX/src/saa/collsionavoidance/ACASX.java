@@ -164,7 +164,7 @@ public class ACASX extends CollisionAvoidanceAlgorithm
 					}
 				}			
 		
-				System.out.println("  Best action code is "+bestActionCode);
+//				System.out.println("  Best action code is "+bestActionCode);
 				
 				ra=bestActionCode;
 				

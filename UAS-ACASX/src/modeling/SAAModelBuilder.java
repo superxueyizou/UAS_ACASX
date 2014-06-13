@@ -61,7 +61,7 @@ public class SAAModelBuilder
 	    	}
 	    	else
 	    	{
-	    		double vx =CONFIGURATION.headOnVx;
+	    		double vx =-CONFIGURATION.headOnVx;
 	    		double vy =CONFIGURATION.headOnVy;
 	    		double offset = CONFIGURATION.headOnOffset;
 	    			    		
@@ -79,8 +79,8 @@ public class SAAModelBuilder
 	    	uas.getCaa().init();	
 	    }
 				
-		System.out.println("Simulation stepping begins!");
-		System.out.println("====================================================================================================");
+//		System.out.println("Simulation stepping begins!");
+//		System.out.println("====================================================================================================");
 		
 			
 	}

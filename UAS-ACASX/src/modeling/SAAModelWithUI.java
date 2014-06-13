@@ -39,7 +39,7 @@ public class SAAModelWithUI extends GUIState
     {   
         super(new SAAModel(785945568, CONFIGURATION.worldX, CONFIGURATION.worldY, true)); 	    	
     	sBuilder = new SAAModelBuilder((SAAModel) state);
-    	LookupTable.getInstance();
+//    	LookupTable.getInstance();
     }
   
     
@@ -119,7 +119,7 @@ public class SAAModelWithUI extends GUIState
 				private static final long serialVersionUID = 1L;
 				public void draw(Object object, Graphics2D graphics, DrawInfo2D info)
 				{
-					paint = ((UAS)object).isActive? new Color(0, 0, 0):new Color(255, 0, 0);			
+					paint = ((UAS)object).isActive? new Color(125, 125, 125):new Color(255, 0, 0);			
 				    super.draw(object, graphics, info);
 				}
 

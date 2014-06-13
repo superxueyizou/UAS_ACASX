@@ -49,7 +49,7 @@ public class UAS extends Entity implements Oriented2D
 /*************************************************************************************************/
 	//parameters for recording information about simulation
 	private double tempDistanceToDanger = Double.MAX_VALUE; //records the closest distance to danger in each step
-	private double distanceToDanger = Double.MAX_VALUE; //records the closest distance to danger experienced by the uas
+	private double minDistanceToDanger = Double.MAX_VALUE; //records the closest distance to danger experienced by the uas
 	
 	private double tempOscillation = 0; //records the oscillation in each step: area
 	private double Oscillation = 0; //records the oscillation in a simulation: area
@@ -236,12 +236,12 @@ public class UAS extends Entity implements Oriented2D
 		this.tempDistanceToDanger = tempDistanceToDanger;
 	}
 
-	public double getDistanceToDanger() {
-		return distanceToDanger;
+	public double getMinDistanceToDanger() {
+		return minDistanceToDanger;
 	}
 
-	public void setDistanceToDanger(double distanceToDanger) {
-		this.distanceToDanger = distanceToDanger;
+	public void setMinDistanceToDanger(double distanceToDanger) {
+		this.minDistanceToDanger = distanceToDanger;
 	}
 	
 	public double getTempOscillation() {

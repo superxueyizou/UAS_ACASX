@@ -7,7 +7,7 @@ stat.file = $MaxNMACStatics.stat
 stat.num-children = 1
 stat.child.0 = dominant.MyStatistics
 stat.child.0.file = $MaxNMACStatics2.csv
-pop.subpop.0.size = 5
+pop.subpop.0.size = 100
 generations = 50
 
 pop.subpop.0.species		= ec.vector.FloatVectorSpecies
@@ -18,7 +18,7 @@ pop.subpop.0.species.fitness 	= ec.simple.SimpleFitness
 pop.subpop.0.species.genome-size	=7
 
 #self StdDev
-pop.subpop.0.species.min-gene.0 = 0
+pop.subpop.0.species.min-gene.0 = 0.1
 pop.subpop.0.species.max-gene.0 =15
 #self Vx
 pop.subpop.0.species.min-gene.1 =169
@@ -31,14 +31,14 @@ pop.subpop.0.species.max-gene.2 = 58
 pop.subpop.0.species.min-gene.3 = -500 
 pop.subpop.0.species.max-gene.3 =500
 # head on StdDev
-pop.subpop.0.species.min-gene.4 = 0 
+pop.subpop.0.species.min-gene.4 = 0.1 
 pop.subpop.0.species.max-gene.4 = 15 
 #head on Vx
 pop.subpop.0.species.min-gene.5 =169
 pop.subpop.0.species.max-gene.5 =304
 #head On Vy
-pop.subpop.0.species.min-gene.6 = -67 
-pop.subpop.0.species.max-gene.6 = 58
+pop.subpop.0.species.min-gene.6 = -67
+pop.subpop.0.species.max-gene.6 =58
 
 pop.subpop.0.species.min-gene = -500
 pop.subpop.0.species.max-gene = 500

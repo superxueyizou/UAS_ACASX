@@ -41,11 +41,11 @@ public class Simulation
 		String fileName= (String) label.subSequence(label.lastIndexOf("/")+1, label.lastIndexOf("."));
 		
 		int i=0;
-		
+		long startTime=System.currentTimeMillis();
 		while(result == EvolutionState.R_NOTDONE)
 		{
 			result=eState.evolve();
-			System.out.println("simulation of generation "+i +" finished :)&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
+			System.out.println("simulation of generation "+i +" finished :)");
 						
 			if(simDataSet.size()>=200)
 			{  				
@@ -55,7 +55,8 @@ public class Simulation
 			}
 			i++;
 		}	
-		
+		long endTime=System.currentTimeMillis();
+		System.out.println(String.format("This evolution takes %d seconds", (endTime-startTime)/1000));
 //		for(int j=0; j<MyStatistics.accidents.length; j++)
 //		{
 //			System.out.print(MyStatistics.accidents[j]);

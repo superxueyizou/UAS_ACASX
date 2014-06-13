@@ -22,8 +22,8 @@ public class ACASXMDP
 	 */
 	//"COC"-->0,"CL25"-->1, "DES25"-->2
 	//"Loop"-->-1
-	public static final int nh = 10;
-	public static final int noV= 10;
+	public static final int nh = 15;
+	public static final int noV= 15;
 	public static final int niV= 14;
 	public static final int nt=20;
 	public static final int nra=7;
